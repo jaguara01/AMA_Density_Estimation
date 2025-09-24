@@ -1,0 +1,256 @@
+---
+title: "Density Estimation"
+subtitle: "Bandwidth Choice by Leave-one-out Maximum Likelihood"
+author: "Pedro Delicado"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', message = FALSE, warning = FALSE)
+```
+
+# Histogram
+
+
+1. In the slides we have seen the following relationship (b_Desnity_estimation p.24)
+$$
+\hat{f}_{h,(-i)}(x_i)=\frac{n}{n-1}\left( \hat{f}_{h}(x_i) - {K(0)\over nh}\right)
+$$
+between the leave-one-out kernel density estimator $\hat{f}_{h,(-i)}(x)$ and the kernel density estimator using all the observations $\hat{f}_{h}(x)$, when both are evaluated at $x_i$, one of the observed data.
+
+We want to find a similar relationship between the histogram estimator of the density function $\hat{f}_{\mathrm{hist}}(x)$ and its leave-one-out version, $\hat{f}_{\mathrm{hist},(-i)}(x)$, when both are evaluated at $x_i$.
+
+---
+
+Let the histogram be defined by bins $B_j$ of common width $b$. The density estimator using all $n$ observations is given by:
+
+
+$$\hat{f}_{\mathrm{H}}(x_i) = \frac{N_{j(x)}}{nb} $$
+where $N\_{j(x)}$ is the count of data points in bin $B_{j(x)}$. 
+
+The leave-one-out estimator, built using $n-1$ data points, evaluates at $x\_i$ as: 
+
+$$
+\hat{f}_{\mathrm{H},(-i)}(x_i) = \frac{N_{j(x)} - 1}{(n-1).b} 
+$$
+
+By substituting $N_{j(x) = nb \cdot \hat{f}\_{\mathrm{hist}}(x\_i)$, we derive the relationship: 
+
+$$
+\hat{f}_{\mathrm{H},(-i)}(x_i) = \frac{n}{n-1}\hat{f}_{\mathrm{H}}(x_i) - \frac{1}{(n-1).b}
+$$
+
+
+This is the desired relationship between the full histogram estimator and the leave-one-out version, both evaluated at an observation $x_i$.
+
+---
+
+## 2. Application to CD Rate Data
+
+Read the CD rate data set and call x the first column.
+
+```{r CDrate}
+cdrate.df <-read.table("data/cdrate.dat")
+head(cdrate.df)
+x <- cdrate.df[,1]
+x
+```
+Then define
+$$
+A <- min(x) - 0.05 * diff(range(x))\\
+Z <- max(x) + 0.05 * diff(range(x))\\
+nbr <- 7
+$$
+
+```{r load_data}
+
+# Define the range for the histogram
+A <- min(x) - 0.05 * diff(range(x))
+Z <- max(x) + 0.05 * diff(range(x))
+nbr <- 7
+
+cat("A =", A, "\n")
+cat("Z =", Z, "\n")
+
+```
+and plot the histogram of x as
+
+$$
+hx <- hist(x,breaks=seq(A,Z,length=nbr+1),freq=F)
+$$
+```{r 2_Plot_hist}
+# Plot the histogram
+hx <- hist(x, breaks = seq(A, Z, length = nbr + 1), freq = FALSE,
+           main = "Histogram of CDrate", xlab = "CDrate")
+```
+
+The following sentence converts this histogram into a function that can be evaluated at any point of $\mathbb{R}$, or at a vector of real numbers:
+
+```{r step_function}
+hx_f <- stepfun(hx$breaks, c(0, hx$density, 0))
+```
+
+Use `hx_f` to evaluate the histogram at the vector of observed data $x$. Then add the points $(x_i,\hat{f}_{\mathrm{hist}}(x_i))$, $i=1,\dots,n$, to the histogram you have plotted before.
+
+```{r plot_points_full}
+# Evaluate the histogram estimator at each data point
+f_hat <- hx_f(x)
+
+# Add the points to the plot
+plot(hx, freq = FALSE, main = "Histogram of CDrate", xlab = "CDrate")
+points(x, f_hat, col = "blue", pch = 19, cex = 0.5)
+legend("topright", "f_hat(x_i)", col = "blue", pch = 19)
+```
+
+## 3. 
+Use the formula you have found before relating $\hat{f}_{\mathrm{hist}}(x_i)$ and $\hat{f}_{\mathrm{hist},(-i)}(x_i)$ to compute $\hat{f}_{\mathrm{hist},(-i)}(x_i)$, $i=1, \dots, n$. Then add the points $(x_i,\hat{f}_{\mathrm{hist},(-i)}(x_i))$, $i=1,\dots,n$, to the previous plot.
+
+```{r plot_points_loo}
+# Calculate bin width
+b <- (Z - A) / nbr
+n <- length(x)
+
+# Calculate the leave-one-out estimates
+f_loo <- (n / (n - 1)) * f_hat - 1 / ((n - 1) * b)
+
+# Add the points to the plot
+plot(hx, freq = FALSE, main = "Histogram with Full and LOO Densities", xlab = "CDrate")
+points(x, f_hat, col = "blue", pch = 19, cex = 0.5)
+points(x, f_loo, col = "red", pch = 4, cex = 0.5)
+legend("topright", c("f_hat(x_i)", "f_loo(x_i)"), col = c("blue", "red"), pch = c(19, 4))
+```
+The blue Dots show the density estimate for each data point using the full dataset. As you can see, all dots within the same bin are at the same height—the top of that bin's bar.
+
+The red 'X' show the density estimate for each data point if that point had been excluded from the calculation.
+
+The red 'X's are always slightly lower than the blue dots. Because when we "leave out" a data point $x_i$, the count of points in its bin ($N_k$) decreases by one. Since the density is calculated as (count / total), reducing the count naturally leads to a lower density estimate for that bin.
+
+## 4. Histogram score for 7 bins
+Compute the leave-one-out log-likelihood function corresponding to the previous histogram, at which `nbr=7` has been used.
+
+```{r loo_loglik_7}
+# We only take the log of positive values. If f_loo is 0, log(f_loo) is -Inf.
+# This happens when a point is the only one in its bin.
+looCV_log_lik_7 <- sum(log(f_loo[f_loo > 0]))
+cat("Leave-one-out log-likelihood for nbr=7:", looCV_log_lik_7)
+```
+
+---
+
+## Choosing `nbr` by Leave-one-out Cross Validation (looCV)
+
+Consider now the set `seq(1,15)` as possible values for `nbr`, the number of intervals of the histogram. For each of them compute the leave-one-out log-likelihood function (`looCV_log_lik`) for the corresponding histogram.
+
+```{r nbr_loocv}
+n <- length(x)
+nbr_values <- 1:15
+looCV_log_lik_nbr <- numeric(length(nbr_values))
+
+for (i in seq_along(nbr_values)) {
+  current_nbr <- nbr_values[i]
+  b <- (Z - A) / current_nbr
+  
+  # Create histogram object
+  hx <- hist(x, breaks = seq(A, Z, length = current_nbr + 1), plot = FALSE)
+  
+  # Create step function
+  hx_f <- stepfun(hx$breaks, c(0, hx$density, 0))
+  
+  # Calculate f_hat and f_loo
+  f_hat <- hx_f(x)
+  f_loo <- (n / (n - 1)) * f_hat - 1 / ((n - 1) * b)
+  
+  # Calculate and store looCV log-likelihood
+  looCV_log_lik_nbr[i] <- sum(log(f_loo[f_loo > 0]))
+}
+
+# Plot the results
+plot(nbr_values, looCV_log_lik_nbr, type = "b", pch = 19,
+     xlab = "Number of Bins (nbr)", ylab = "LOO Log-Likelihood",
+     main = "LOO Cross-Validation for Number of Bins")
+
+# Find the optimal nbr
+optimal_nbr <- nbr_values[which.max(looCV_log_lik_nbr)]
+abline(v = optimal_nbr, col = "red", lty = 2)
+legend("bottomright", legend = paste("Optimal nbr =", optimal_nbr), col = "red", lty = 2)
+```
+The shape of a histogram depends heavily on how many bins you choose.
+
+Too few bins: The histogram is overly smooth and hides important details (high bias).
+Too many bins: The histogram is too spiky and noisy, reflecting random quirks in the data rather than the true underlying pattern (high variance).
+
+The optimal number of bins for the histogram is determined using Leave-One-Out Cross-Validation (looCV). This method involves testing a range of bin counts (nbr) and calculating a performance score, the looCV log-likelihood, for each.
+
+The plot shows this score for nbr values from 1 to 15. The log-likelihood reaches its maximum value at nbr = 15, which is therefore considered the optimal choice for this dataset.
+
+
+Finally, plot the histogram of $x$ using the optimal value of `nbr`.
+
+```{r plot_optimal_nbr}
+hist(x, breaks = seq(A, Z, length = optimal_nbr + 1), freq = FALSE,
+     main = paste("Optimal Histogram (nbr =", optimal_nbr, ")"),
+     xlab = "CDrate")
+```
+```{r}
+bandwidth <- (Z - A) / nbr
+bandwidth
+```
+---
+
+## 6. Choosing `b` by looCV
+
+Let `b` be the common width of the bins of a histogram. Consider the set `seq((Z-A)/15,(Z-A)/1,length=30)` as possible values for `b`. Select the value of `b` maximizing the leave-one-out log-likelihood function, and plot the corresponding histogram.
+
+```{r b_loocv}
+
+b_values <- seq((Z - A) / 15, (Z - A) / 1, length = 30)
+looCV_log_lik_b <- numeric(length(b_values))
+
+for (i in seq_along(b_values)) {
+  current_b <- b_values[i]
+  
+  # Create histogram object with specified bin width
+  hx <- hist(x, breaks = seq(A, Z + current_b, by = current_b), plot = FALSE)
+  
+  # Create step function
+  hx_f <- stepfun(hx$breaks, c(0, hx$density, 0))
+  
+  # Calculate f_hat and f_loo
+  f_hat <- hx_f(x)
+  f_loo <- (n / (n - 1)) * f_hat - 1 / ((n - 1) * current_b)
+  
+  # Calculate and store looCV log-likelihood
+  looCV_log_lik_b[i] <- sum(log(f_loo[f_loo > 0]))
+}
+
+# Plot the results
+plot(b_values, looCV_log_lik_b, type = "b", pch = 19,
+     xlab = "Bin Width (b)", ylab = "LOO Log-Likelihood",
+     main = "LOO Cross-Validation for Bin Width")
+
+# Find the optimal b
+optimal_b <- b_values[which.max(looCV_log_lik_b)]
+abline(v = optimal_b, col = "red", lty = 2)
+legend("bottomright", legend = paste("Optimal b =", round(optimal_b, 3)), col = "red", lty = 2)
+```
+
+Plot the corresponding histogram.
+
+```{r plot_optimal_b}
+hx_optimal_b <- hist(x, breaks = seq(A, Z + optimal_b, by = optimal_b), plot = FALSE)
+plot(hx_optimal_b, freq = FALSE,
+     main = paste("Optimal Histogram (b =", round(optimal_b, 3), ")"),
+     xlab = "CDrate")
+```
+
+
+---
+
+# 7.  Mixture of Normals Example
+
+Recycle the functions `graph.mixt` and `sim.mixt` to generate $n=100$ data from
+$$ f(x) = (3/4)N(x; m = 0, s = 1) +(1/4) N(x; m = 3/2, s = 1/3) 
+$$
