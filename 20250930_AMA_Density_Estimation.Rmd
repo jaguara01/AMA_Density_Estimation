@@ -134,7 +134,9 @@ looCV_log_lik_7 <- sum(log(f_loo[f_loo > 0]))
 cat("Leave-one-out log-likelihood for nbr=7:", looCV_log_lik_7)
 ```
 
-\textcolor{red}{Feedback and correction: This is wrong: $looCV_log_lik_nbr[i] <- sum(log(f_loo[f_loo > 0]))$ When selecting $[f_loo > 0]$you avoid vaues of the log-likelihood equal to -infinity. Nevertheless, a -infinity in the log-likelihood function has a clear meaning: your parameter choice is impossible! So you must not try to avoid -infinity values. It should be better to write $looCV_log_lik_nbr[i] <- sum(log(f_loo))$ .}
+\textcolor{red}{Feedback and correction: This is wrong: $looCV_log_lik_nbr[i] <- sum(log(f_loo[f_loo > 0]))$ When selecting $[f_loo > 0]$you avoid vaues of the log-likelihood equal to -infinity. Nevertheless, a -infinity in the log-likelihood function has a clear meaning: your parameter choice is impossible! So you must not try to avoid -infinity values. It should be better to write $looCV_log_lik_nbr[i] <- sum(log(f_loo))$.}
+
+\textcolor{red}{This correction will be made in question 4, 5, 6 and 7}
 
 \textcolor{red}{After correction, we observe the same result as before meaning that all our values are positives and that our model will be able to make possible prediction for every points.}
 
@@ -172,7 +174,7 @@ for (i in seq_along(nbr_values)) {
   f_loo <- (n / (n - 1)) * f_hat - 1 / ((n - 1) * b)
   
   # Calculate and store looCV log-likelihood
-  looCV_log_lik_nbr[i] <- sum(log(f_loo[f_loo > 0]))
+  looCV_log_lik_nbr[i] <- sum(log(f_loo))
 }
 
 # Plot the results
@@ -186,7 +188,9 @@ abline(v = optimal_nbr, col = "red", lty = 2)
 legend("bottomleft", legend = paste("Optimal nbr =", optimal_nbr), col = "red", lty = 2)
 ```
 
-The plot shows the optimal value of nbr as that at which looCV_log_lik takes its maximum is nbr=15, which is therefore considered the optimal choice for this dataset. One could argue that the Log-likelihood steadily increases from nbr=1 to nbr=9, and then from nbr=10 onward the Log-likelihood changes erratically, probably due to the high variance nature of choosing a high bandwidth, making nbr=15 the maximum due to randomness. It could be wise to choose nbr=9 as a good tradeoff, but basing our choice purely on the maximization of the Log-likelihood we would have to choose nbr=15.
+The plot displays the leave-one-out log-likelihood score for histograms with a varying number of bins (nbr). The score increases to a distinct peak at nbr = 5, which is the value that maximizes the log-likelihood. After this point, the performance becomes more erratic and generally decreases.
+
+Therefore, according to the looCV method, the optimal choice for the number of bins is 5 for this dataset. Unlike the previous analysis, there is a clear peak, and choosing a higher nbr would likely result in overfitting.
 
 Finally, plot the histogram of $x$ using the optimal value of `nbr`.
 
@@ -221,7 +225,7 @@ for (i in seq_along(b_values)) {
   f_loo <- (n / (n - 1)) * f_hat - 1 / ((n - 1) * current_b)
   
   # Calculate and store looCV log-likelihood
-  looCV_log_lik_b[i] <- sum(log(f_loo[f_loo > 0]))
+  looCV_log_lik_b[i] <- sum(log(f_loo))
 }
 
 # Plot the results
@@ -244,7 +248,7 @@ plot(hx_optimal_b, freq = FALSE,
      xlab = "CDrate")
 ```
 
-As we can see, through both methods, maximizing by choosing the number of bins and maximizing by choosing the bin size, we find the same optimal histogram with the highest log-likelihood (LLO).
+\textcolor{red}{As we can see from the new plots after correction, both optimization methods—choosing the number of bins (nbr) and choosing the bin width (b) directly—converge on the same optimal histogram structure. The analysis for nbr found that 5 bins were optimal, and the analysis for b found an optimal width of 0.273, which also results in a 5-bin histogram. This confirms that the model with 5 bins provides the most robust predictive fit for this dataset.}
 
 ------------------------------------------------------------------------
 
@@ -360,7 +364,7 @@ for (i in seq_along(b_values)) {
   f_loo <- (n / (n - 1)) * f_hat - 1 / ((n - 1) * current_b)
   
   # Calculate and store looCV log-likelihood
-  looCV_log_lik_b[i] <- sum(log(f_loo[f_loo > 0]))
+  looCV_log_lik_b[i] <- sum(log(f_loo))
 }
 
 # Plot the results
