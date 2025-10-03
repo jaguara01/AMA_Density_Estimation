@@ -140,7 +140,7 @@ cat("Leave-one-out log-likelihood for nbr=7:", looCV_log_lik_7)
 
 \textcolor{red}{After correction, we observe the same result as before meaning that all our values are positives and that our model will be able to make possible prediction for every points.}
 
-\textcolor{red}{It's better to keep all values because a zero prediction (f_loo = 0) means the model considered that data point impossible. Including these zeros results in a log-likelihood of negative infinity, which correctly penalizes and disqualifies a model that makes impossible predictions.}
+\textcolor{red}{It's better to keep all values because a zero prediction ($f_loo = 0$) means the model considered that data point impossible. Including these zeros results in a log-likelihood of negative infinity, which correctly penalizes and disqualifies a model that makes impossible predictions.}
 
 
 ```{r loo_loglik_7}
