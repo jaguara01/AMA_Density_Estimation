@@ -1,11 +1,14 @@
 ---
 title: "Density Estimation"
-subtitle: "Bandwidth Choice by Leave-one-out Maximum Likelihood"
 author: "Azzarito Domenico, Daniel Reverter, Alexis Vendrix"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
+  html_document:
+    toc: false
+    df_print: paged
   pdf_document:
-    toc: no
+    toc: false
+subtitle: "Bandwidth Choice by Leave-one-out Maximum Likelihood"
 ---
 
 ```{r setup, include=FALSE}
@@ -127,6 +130,8 @@ The red crosses are always slightly lower than the blue dots. Because when we "l
 
 Compute the leave-one-out log-likelihood function corresponding to the previous histogram, at which `nbr=7` has been used.
 
+<span style="color:red">Before correction:</span>
+
 ```{r old_loo_loglik_7}
 # We only take the log of positive values. If f_loo is 0, log(f_loo) is -Inf.
 # This happens when a point is the only one in its bin.
@@ -134,20 +139,19 @@ looCV_log_lik_7 <- sum(log(f_loo[f_loo > 0]))
 cat("Leave-one-out log-likelihood for nbr=7:", looCV_log_lik_7)
 ```
 
-\textcolor{red}{Feedback and correction: This is wrong: $looCV_log_lik_nbr[i] <- sum(log(f_loo[f_loo > 0]))$ When selecting $[f_loo > 0]$you avoid vaues of the log-likelihood equal to -infinity. Nevertheless, a -infinity in the log-likelihood function has a clear meaning: your parameter choice is impossible! So you must not try to avoid -infinity values. It should be better to write $looCV_log_lik_nbr[i] <- sum(log(f_loo))$.}
-
-\textcolor{red}{This correction will be made in question 4, 5, 6 and 7}
-
-\textcolor{red}{After correction, we observe the same result as before meaning that all our values are positives and that our model will be able to make possible prediction for every points.}
-
-\textcolor{red}{It's better to keep all values because a zero prediction ($f_loo = 0$) means the model considered that data point impossible. Including these zeros results in a log-likelihood of negative infinity, which correctly penalizes and disqualifies a model that makes impossible predictions.}
-
+<span style="color:red">After correction:</span>
 
 ```{r loo_loglik_7}
 # We take the log of all values.
 looCV_log_lik_7 <- sum(log(f_loo))
 cat("Leave-one-out log-likelihood for nbr=7:", looCV_log_lik_7)
 ```
+
+<span style="color:red">After correction, we observe the same result as before meaning that all our values are positives and that our model will be able to make possible prediction for every points.</span>
+
+<span style="color:red">It's better to keep all values because a zero prediction ($f\_loo = 0$) means the model considered that data point impossible. Including these zeros results in a log-likelihood of negative infinity, which correctly penalizes and disqualifies a model that makes impossible predictions.</span>
+
+
 ------------------------------------------------------------------------
 
 ## 5.
@@ -188,9 +192,9 @@ abline(v = optimal_nbr, col = "red", lty = 2)
 legend("bottomleft", legend = paste("Optimal nbr =", optimal_nbr), col = "red", lty = 2)
 ```
 
-The plot displays the leave-one-out log-likelihood score for histograms with a varying number of bins (nbr). The score increases to a distinct peak at nbr = 5, which is the value that maximizes the log-likelihood. After this point, the performance becomes more erratic and generally decreases.
+<span style="color:red">The plot displays the leave-one-out log-likelihood score for histograms with a varying number of bins (nbr). The score increases to a distinct peak at nbr = 5, which is the value that maximizes the log-likelihood. After this point, the performance becomes more erratic and generally decreases.</span>
 
-Therefore, according to the looCV method, the optimal choice for the number of bins is 5 for this dataset. Unlike the previous analysis, there is a clear peak, and choosing a higher nbr would likely result in overfitting.
+<span style="color:red">Therefore, according to the looCV method, the optimal choice for the number of bins is 5 for this dataset. Unlike the previous analysis, there is a clear peak, and choosing a higher nbr would likely result in overfitting.</span>
 
 Finally, plot the histogram of $x$ using the optimal value of `nbr`.
 
@@ -248,7 +252,7 @@ plot(hx_optimal_b, freq = FALSE,
      xlab = "CDrate")
 ```
 
-\textcolor{red}{As we can see from the new plots after correction, both optimization methods—choosing the number of bins (nbr) and choosing the bin width (b) directly—converge on the same optimal histogram structure. The analysis for nbr found that 5 bins were optimal, and the analysis for b found an optimal width of 0.273, which also results in a 5-bin histogram. This confirms that the model with 5 bins provides the most robust predictive fit for this dataset.}
+<span style="color:red">As we can see from the new plots after correction, both optimization methods (choosing the number of bins (nbr) and choosing the bin width (b) directly) converge on the same optimal histogram structure. The analysis for nbr found that 5 bins were optimal, and the analysis for b found an optimal width of 0.273, which also results in a 5-bin histogram. This confirms that the model with 5 bins provides the most robust predictive fit for this dataset.</span>
 
 ------------------------------------------------------------------------
 
@@ -376,13 +380,16 @@ plot(b_values, looCV_log_lik_b, type = "b", pch = 19,
 optimal_b <- b_values[which.max(looCV_log_lik_b)]
 abline(v = optimal_b, col = "red", lty = 2)
 legend("topright", legend = paste("Optimal b =", round(optimal_b, 3)), col = "red", lty = 2)
+
+cat("Leave-one-out log-likelihood for the optimal b:", max(looCV_log_lik_b))
 ```
 
 ```{r hist_opt_sim_mixt}
 hx_optimal_b <- hist(x, breaks = seq(A, Z + optimal_b, by = optimal_b), plot = FALSE)
 plot(hx_optimal_b, freq = FALSE,
      main = paste("Optimal Histogram (b =", round(optimal_b, 3), ")"),
-     xlab = "CDrate")
+     xlab = "CDrate",
+     ylim = c(0, max(c(hx_optimal_b$density, f_x$fx)) * 1.1))
 lines(f_x$x, f_x$fx, lwd = 2)
 ```
 
@@ -400,24 +407,15 @@ plot(hx_scott_b, freq = FALSE, ylim = c(0, ymax),
 lines(f_x$x, f_x$fx, lwd = 2)
 ```
 
-In this case, the $b$ that maximized the leave-one-out log-likelihood provided a better fit than Scott's formula for choosing $b$. This can be proved by calculating the MSE of the estimators.
+<span style="color:red">The results of using Scott's formula for finding the optimal bandwidth versus using the bandwidth that maximizes the leave-one-out log-likelihood are similar. Visually, Scott's formula looks better because it results in 6 bins, and the last bin captures the right tail of the normal distribution. Analytically, the bandwidth that maximizes the leave-one-out log-likelihood has (of course) a higher leave-one-out log-likelihood, which can be seen as a better fit, as seen below (-149.5 vs -150.4):</span>
 
-```{r compare_b_sim_mixt}
-# Compute histogram densities as step functions
-hx_scott_f <- stepfun(hx_scott_b$breaks, c(0, hx_scott_b$density, 0))
-hx_optimal_f <- stepfun(hx_optimal_b$breaks, c(0, hx_optimal_b$density, 0))
-
-# Evaluate histogram estimates at the grid of f_x
-f_hat_scott <- hx_scott_f(f_x$x)
-f_hat_optimal <- hx_optimal_f(f_x$x)
-
-# Compute MSE for Scott's rule and Optimal b
-mse_scott <- mean((f_hat_scott - f_x$fx)^2)
-mse_optimal <- mean((f_hat_optimal - f_x$fx)^2)
-
-# Print results
-cat("MSE (Scott's rule):", mse_scott, "\n")
-cat("MSE (Optimal b):", mse_optimal, "\n")
+```{r log_scott}
+# Calculate loo_log_likelihood for scott_b
+  hx <- hist(x, breaks = seq(A, Z + scott_b, by = scott_b), plot = FALSE)
+  hx_f <- stepfun(hx$breaks, c(0, hx$density, 0))
+  f_hat <- hx_f(x)
+  f_loo <- (n / (n - 1)) * f_hat - 1 / ((n - 1) * scott_b)
+  sum(log(f_loo))
 ```
 
 # Kernel Density Estimator
